@@ -82,6 +82,7 @@ jobs:
             # Your code here
             cd frontend
             npm install
+            npm run build
             npm run test
 
   test-backend:
@@ -97,6 +98,7 @@ jobs:
             # Your code here
             cd backend
             npm install
+            npm run build
             npm run test
 
   scan-frontend:
