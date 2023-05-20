@@ -16,25 +16,43 @@ commands:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name "<<parameters.stack_name>>"
+  
+  clean-s3:
+    description: Clean all s3 files
+    steps:
+      - run:
+          name: delete all aws s3 files
+          command: aws s3 rm s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+          when: on_fail
 
-  #   revert-migrations:
-  #     description: Revert the last migration if successfully run in the current workflow.
-  #     parameters:
-  #       # Add parameter here
-  #     steps:
-  #       - run:
-  #           name: Revert migrations
-  #           # Add when this will run
-  #           command: |
-  #             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-  #             SUCCESS = 1
-  #             if(( $SUCCESS==1 ));
-  #             then
-  #             #  cd ~/project/backend
-  #             #  npm install
-  #             #  Add revert code here. You can find this in the Getting Started section.
-  #               exit 1
-  #             fi
+  
+  install-awscli:
+    description: Install awscli for environment still not have awscli
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            sudo apt upgrade
+            sudo apt update
+            sudo apt install awscli -y
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set region $AWS_DEFAULT_REGION
+
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            export SUCCESS=$(curl -i https://kvdb.io/UR8ueHqqqDZZjy8sb2uHYm/migration_${CIRCLE_WORKFLOW_ID:0:7} | tail -n 1)
+            if(( $SUCCESS==0 ));
+            then
+              cd backend
+              npm run migrations:revert
+            fi
+  
   slack_notification:
     description: "A slack notification"
     steps:
@@ -91,6 +109,7 @@ commands:
                 }
               ]
             }
+  
   setup_aws:
     description: setup aws
     steps:
@@ -244,6 +263,7 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - install-awscli
       - add_ssh_keys:
           fingerprints:
             - 9d:6f:00:4a:b9:fb:82:0d:95:da:fc:0d:24:b4:e1:1d
@@ -259,7 +279,8 @@ jobs:
           command: |
             cd .circleci/ansible
             ansible-playbook -i inventory.txt configure-server.yml
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment:
+          stack_name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   run-migrations:
     docker:
@@ -282,22 +303,17 @@ jobs:
             then
               curl https://kvdb.io/VMPGWF86zW77YfYobh6o7b/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
-      # Here's where you will add some code to rollback on failure
+      - revert-migrations
 
   deploy-frontend:
     docker:
       - image: cimg/node:13.8.0
     steps:
       - checkout
+      - install-awscli
       - attach_workspace:
           at: ~/
-      - run:
-          name: Install dependencies
-          command: |
-            sudo apt upgrade && apt update && apt install awscli -y
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set region $AWS_DEFAULT_REGION
+      - install-awscli
       - run:
           name: Get backend url
           command: |
@@ -316,13 +332,16 @@ jobs:
             npm run build
             tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment:
+          stack_name: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - clean-s3
 
   deploy-backend:
     docker:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
+      - install-awscli
       - add_ssh_keys:
           fingerprints:
             - 9d:6f:00:4a:b9:fb:82:0d:95:da:fc:0d:24:b4:e1:1d
@@ -342,7 +361,8 @@ jobs:
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt deploy-backend.yml
-      # Here's where you will add some code to rollback on failure
+      - destroy-environment:
+          stack_name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
 
   # smoke-test:
   #   docker:
