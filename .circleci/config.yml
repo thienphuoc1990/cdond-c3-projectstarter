@@ -294,7 +294,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            apt upgrade && update && install awscli -y
+            sudo apt upgrade && update && install awscli -y
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set region $AWS_DEFAULT_REGION
@@ -320,19 +320,25 @@ jobs:
 
   # deploy-backend:
   #   docker:
-  #     # Docker image here that supports Ansible
+  #     - image: python:3.7-alpine3.11
   #   steps:
-  #     # Checkout code from git
-  #     # Add ssh keys with fingerprint
-  #     # attach workspace
+  #     - checkout
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - 9d:6f:00:4a:b9:fb:82:0d:95:da:fc:0d:24:b4:e1:1d
+  #     - attach_workspace:
+  #         at: ~/
+  #     - run: cat .circleci/ansible/inventory.txt
   #     - run:
   #         name: Install dependencies
   #         command: |
-  #           # your code here
+  #           apk add --update ansible
+  #     - restore_cache:
+  #         keys: [backend-build]
   #     - run:
   #         name: Deploy backend
   #         command: |
-  #           # your code here
+  #           tar -C backend -czvf artifact.tar.gz .
   #     # Here's where you will add some code to rollback on failure
 
   # smoke-test:
