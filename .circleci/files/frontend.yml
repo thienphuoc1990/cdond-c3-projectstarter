@@ -11,9 +11,12 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "udapeople-${ID}"
-      # AccessControl: PublicRead
+      AccessControl: PublicRead
       PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
         BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
       WebsiteConfiguration:
         IndexDocument: index.html
         ErrorDocument: 404.html
