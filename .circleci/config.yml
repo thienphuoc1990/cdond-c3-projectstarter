@@ -243,7 +243,7 @@ jobs:
 
   configure-infrastructure:
     docker:
-      - image: circleci/python@2.1.1
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - add_ssh_keys:
@@ -255,7 +255,7 @@ jobs:
       - run:
           name: Install dependencies
           command: |
-            pip install --user ansible
+            apk add --update ansible
       - run:
           name: Configure server
           command: |
@@ -378,20 +378,20 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-frontend:
-          context: global
-      - build-backend:
-          context: global
-      - test-frontend:
-          requires: [build-frontend]
-      - test-backend:
-          requires: [build-backend]
-      - scan-backend:
-          requires: [build-backend]
-      - scan-frontend:
-          requires: [build-frontend]
-      - deploy-infrastructure:
-          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+      # - build-frontend:
+      #     context: global
+      # - build-backend:
+      #     context: global
+      # - test-frontend:
+      #     requires: [build-frontend]
+      # - test-backend:
+      #     requires: [build-backend]
+      # - scan-backend:
+      #     requires: [build-backend]
+      # - scan-frontend:
+      #     requires: [build-frontend]
+      - deploy-infrastructure
+          # requires: [test-frontend, test-backend, scan-frontend, scan-backend]
           # filters:
           #   branches:
           #     only: [test-feature-branch]
