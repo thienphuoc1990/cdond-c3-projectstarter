@@ -227,8 +227,7 @@ jobs:
       - run:
           name: Add back-end ip to ansible inventory
           command: |
-            export INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name udapeople-backend-${TEST_BE_STACKNAME:0:7} --query "Stacks[0].Outputs[0].OutputValue" --output text)
-            aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt
+            aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text
       - run: cat .circleci/ansible/inventory.txt
       - run: pwd
       - persist_to_workspace:
@@ -302,8 +301,7 @@ jobs:
       - run:
           name: Get backend url
           command: |
-            export INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name udapeople-backend-${TEST_BE_STACKNAME:0:7} --query "Stacks[0].Outputs[0].OutputValue" --output text)
-            export BACKEND_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt)
+            export BACKEND_IP=$(aws ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt)
             export API_URL="http://${BACKEND_IP}:3030"
             echo "${API_URL}"
             echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
