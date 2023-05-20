@@ -382,6 +382,8 @@ jobs:
       - run:
           name: Backend smoke test.
           command: |
+            echo "${API_URL}"
+            echo "${API_URL}/api/status"
             if curl "${API_URL}/api/status" | grep "ok"
             then
               exit 0
@@ -400,8 +402,8 @@ jobs:
               exit 1
             fi
       - revert-migrations
-      - clean-s3
-      - destroy-environment
+      # - clean-s3
+      # - destroy-environment
 
   cloudfront-update:
     docker:
@@ -461,12 +463,11 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      # - deploy-infrastructure
       - deploy-infrastructure:
           requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-      # filters:
-      #   branches:
-      #     only: [test-feature-branch]
+          filters:
+            branches:
+              only: [master]
       - configure-infrastructure:
           requires: [deploy-infrastructure]
       - run-migrations:
