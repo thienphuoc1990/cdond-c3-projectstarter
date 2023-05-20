@@ -32,7 +32,21 @@ commands:
       - run:
           name: Install dependencies
           command: |
-            apk add awscli
+            sudo apt upgrade 
+            sudo apt update
+            sudo apt install awscli -y
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set region $AWS_DEFAULT_REGION
+
+  
+  install-awscli-alpine-based:
+    description: Install awscli for environment still not have awscli
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            pip install --no-cache-dir awscli
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set region $AWS_DEFAULT_REGION
@@ -261,7 +275,7 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install-awscli
+      - install-awscli-alpine-based
       - add_ssh_keys:
           fingerprints:
             - 9d:6f:00:4a:b9:fb:82:0d:95:da:fc:0d:24:b4:e1:1d
@@ -311,7 +325,6 @@ jobs:
       - install-awscli
       - attach_workspace:
           at: ~/
-      - install-awscli
       - run:
           name: Get backend url
           command: |
@@ -339,7 +352,7 @@ jobs:
       - image: python:3.7-alpine3.11
     steps:
       - checkout
-      - install-awscli
+      - install-awscli-alpine-based
       - add_ssh_keys:
           fingerprints:
             - 9d:6f:00:4a:b9:fb:82:0d:95:da:fc:0d:24:b4:e1:1d
