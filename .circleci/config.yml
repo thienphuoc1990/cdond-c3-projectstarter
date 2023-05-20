@@ -2,19 +2,20 @@ version: 2.1
 
 orbs:
   slack: circleci/slack@4.12.5
+  aws: circleci/aws-cli@3.1.5
 
 commands:
-  #   destroy-environment:
-  #     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
-  #     parameters:
-  #       # Add parameter here
-  #     steps:
-  #       - run:
-  #           name: Destroy environments
-  #           when: on_fail
-  #           command: |
-  #             # Your code here
-  #             exit 1
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+      stack_name:
+        type: string
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+            aws cloudformation delete-stack --stack-name "<<parameters.stack_name>>"
 
   #   revert-migrations:
   #     description: Revert the last migration if successfully run in the current workflow.
@@ -90,6 +91,13 @@ commands:
                 }
               ]
             }
+  setup_aws:
+    description: setup aws
+    steps:
+      - aws/setup:
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          aws-region: AWS_DEFAULT_REGION
 
 jobs:
   build-frontend:
@@ -190,39 +198,45 @@ jobs:
             npm install
             npm audit --audit-level=critical
 
-  # deploy-infrastructure:
-  #   docker:
-  #   # Docker image here that supports AWS CLI
-  #   steps:
-  #     # Checkout code from git
-  #     - run:
-  #         name: Ensure back-end infrastructure exists
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file .circleci/files/backend.yml \
-  #             #--tags project=your-tag \
-  #             # --stack-name "your back-end stack name with workflow id" \
-  #             # --parameter-overrides ID="your workflow id"
-  #             exit 1
-  #     - run:
-  #         name: Ensure front-end infrastructure exist
-  #         command: |
-  #           aws cloudformation deploy \
-  #             --template-file .circleci/files/frontend.yml \
-  #             #--tags project=your-tag \
-  #             # --stack-name "your front-end stack name with workflow id" \
-  #             # --parameter-overrides ID="your workflow id"
-  #             exit 1
-  #     - run:
-  #         name: Add back-end ip to ansible inventory
-  #         command: |
-  #           # Your code here
-  #           exit 1
-  #     - persist_to_workspace:
-  #         root: ~/
-  #         paths:
-  #           - project/.circleci/ansible/inventory.txt
-  #     # Here's where you will add some code to rollback on failure
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli:latest
+    steps:
+      - checkout
+      - setup_aws
+      - run:
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/backend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          stack_name: udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+            aws cloudformation deploy \
+              --template-file .circleci/files/frontend.yml \
+              --tags project=udapeople \
+              --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+              --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"
+      - destroy-environment:
+          stack_name: udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}
+      - run:
+          name: Add back-end ip to ansible inventory
+          command: |
+            rm -rf .circleci/ansible/inventory.txt
+            echo [web] > .circleci/ansible/inventory.txt
+            export INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name udapeople-backend-${TEST_BE_STACKNAME:0:7} --query "Stacks[0].Outputs[0].OutputValue" --output text)
+            aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt
+            cat .circleci/ansible/inventory.txt
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .circleci/ansible/inventory.txt
+      
 
   # configure-infrastructure:
   #   docker:
@@ -370,11 +384,11 @@ workflows:
           requires: [build-backend]
       - scan-frontend:
           requires: [build-frontend]
-      # - deploy-infrastructure:
-      #     requires: [test-frontend, test-backend, scan-frontend, scan-backend]
-      #     filters:
-      #       branches:
-      #         only: [test-feature-branch]
+      - deploy-infrastructure:
+          requires: [test-frontend, test-backend, scan-frontend, scan-backend]
+          # filters:
+          #   branches:
+          #     only: [test-feature-branch]
       # - configure-infrastructure:
       #     requires: [deploy-infrastructure]
       # - run-migrations:
