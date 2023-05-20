@@ -231,7 +231,7 @@ jobs:
             echo [web] > .circleci/ansible/inventory.txt
             export INSTANCE_ID=$(aws cloudformation describe-stacks --stack-name udapeople-backend-${TEST_BE_STACKNAME:0:7} --query "Stacks[0].Outputs[0].OutputValue" --output text)
             aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> .circleci/ansible/inventory.txt
-            cat .circleci/ansible/inventory.txt
+      - run: cat .circleci/ansible/inventory.txt
       - persist_to_workspace:
           root: ~/
           paths:
