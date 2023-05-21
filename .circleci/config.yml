@@ -372,6 +372,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
+            apk add curl
       - run:
           name: Configure server
           command: |
@@ -452,6 +453,7 @@ jobs:
           name: Install dependencies
           command: |
             apk add --update ansible
+            apk add curl
       - restore_cache:
           keys: [backend-build]
       - run:
