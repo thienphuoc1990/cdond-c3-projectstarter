@@ -31,7 +31,6 @@ commands:
           command: |
             yum install -y tar gzip
 
-  
   install-awscli:
     description: Install awscli for environment still not have awscli
     steps:
@@ -45,7 +44,6 @@ commands:
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set region $AWS_DEFAULT_REGION
 
-  
   install-awscli-alpine-based:
     description: Install awscli for environment still not have awscli
     steps:
@@ -145,6 +143,9 @@ commands:
               ]
             }
 
+  slack_notification_succeeded:
+    description: "A succeeded slack notification"
+    steps:
       - slack/notify:
           event: pass
           custom: |
@@ -526,7 +527,7 @@ jobs:
               --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
               --tags project=udapeople
             echo ${OldWorkflowID} >> oldWorkflowId.txt
-            echo pwd
+            pwd
       - persist_to_workspace:
           root: ~/
           paths:
@@ -541,6 +542,7 @@ jobs:
     steps:
       - checkout
       - setup_aws
+      - install-tar-utility
       - attach_workspace:
           at: ~/
       - run:
@@ -562,6 +564,7 @@ jobs:
               aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
             fi
       - slack_notification
+      - slack_notification_succeeded
 
 workflows:
   default:
