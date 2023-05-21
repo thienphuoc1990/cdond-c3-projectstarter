@@ -548,8 +548,8 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            cat project/oldWorkflowId.txt
-            export OldWorkflowID=$(cat project/oldWorkflowId.txt)
+            cat oldWorkflowId.txt
+            export OldWorkflowID=$(cat oldWorkflowId.txt)
             export OldWorkflowIDFromAWS=$(aws cloudformation \
               list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
               --no-paginate --output text)
