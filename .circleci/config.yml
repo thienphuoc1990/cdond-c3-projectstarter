@@ -70,57 +70,11 @@ commands:
     steps:
       - slack/notify:
           event: fail
-          custom: |
-            {
-              "attachments": [
-                {
-                  "blocks": [
-                    {
-                      "type": "header",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Build *${CIRCLE_BUILD_NUM}* is FAILED",
-                        "emoji": true
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "Build number *${CIRCLE_BUILD_NUM}* is failed, please check link here: ${CIRCLE_BUILD_URL}"
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
+          template: basic_fail_1
 
       - slack/notify:
           event: pass
-          custom: |
-            {
-              "attachments": [
-                {
-                  "blocks": [
-                    {
-                      "type": "header",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Build *${CIRCLE_BUILD_NUM}* is PASSED",
-                        "emoji": true
-                      }
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": "Build number *${CIRCLE_BUILD_NUM}* is PASSED, check link here: ${CIRCLE_BUILD_URL}"
-                      }
-                    }
-                  ]
-                }
-              ]
-            }
+          template: success_tagged_deploy_1
   
   setup_aws:
     description: setup aws
