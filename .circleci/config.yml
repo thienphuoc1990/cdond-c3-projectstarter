@@ -12,8 +12,6 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            aws cloudformation describe-stack-events --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
-            aws cloudformation describe-stack-events --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
             aws cloudformation delete-stack --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}"
             aws cloudformation delete-stack --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}"
   
@@ -398,7 +396,7 @@ jobs:
             echo ${URL} 
             if curl -s ${URL} | grep "Welcome"
             then
-              exit 1
+              exit 0
             else
               exit 1
             fi
